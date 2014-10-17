@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 
 public class Enemy_AI : MonoBehaviour {
-
+	private bool playerSet = false;
 	public Transform playerOne;
 	public Transform playerTwo;
 	public int monsterRange;
@@ -15,17 +15,20 @@ public class Enemy_AI : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
-		Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
-		//if (vec.magnitude > monsterRange) {
+		if (playerSet) {
+
+			Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
+			//if (vec.magnitude > monsterRange) {
 			vec.Normalize ();
-			rigidbody2D.AddForce(vec * speed * Time.deltaTime);
-		/*	
+			rigidbody2D.AddForce (vec * speed * Time.deltaTime);
+						/*	
 		} else if (vec == (Vector2)playerOne.position) {
 			attack (ref temp);			
 
 		} else if (vec == (Vector2)playerTwo.position) {
 			attack (ref temp);			
 		}*/
+		}
 
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF UPDATE
 	/// <summary>
@@ -51,5 +54,11 @@ public class Enemy_AI : MonoBehaviour {
 	/// <param name="x">The x coordinate.</param>
 	private void attack(ref int x){//Takes a player and removes a point from his health
 		x--;
+	}
+
+	public void setPlayers(Transform p1,Transform p2){
+		playerSet = true;
+		playerOne = p1;
+		playerTwo = p2;
 	}
 }// ----------------------------------------------------------------------------------------------------------------------------------------------END OF MAIN
