@@ -9,8 +9,8 @@ public class PlayerMove : MonoBehaviour {
 	public bool attacking = false;
 
 //movement
-	private float acc = 2000f;
-	private float maxVel = 20f;
+	private float acc = 4000f;
+	private float maxVel = 40f;
 
 
 //axis control
@@ -32,7 +32,7 @@ public class PlayerMove : MonoBehaviour {
 		getAxis();
 		movePlayer();
 
-		//debugSticks();
+		debugSticks();
 	}
 
 //private
@@ -41,7 +41,7 @@ public class PlayerMove : MonoBehaviour {
 		//if attacking
 		rigidbody2D.AddForce(left * Time.deltaTime * acc);
 		if(rigidbody2D.velocity.magnitude > maxVel)
-			rigidbody2D.velocity = new Vector2(maxVel * Mathf.Cos(leftAngle),maxVel * Mathf.Sin(leftAngle));
+			rigidbody2D.velocity = left * maxVel;
 
 		if(right.magnitude != 0)
 			transform.rotation = Quaternion.LookRotation(right);

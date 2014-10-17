@@ -2,11 +2,16 @@ using UnityEngine;
 using System.Collections;
 
 public class Enemy_AI : MonoBehaviour {
+
+//player reference
 	private bool playerSet = false;
-	public Transform playerOne;
-	public Transform playerTwo;
+	Transform playerOne;
+	Transform playerTwo;
+
+//attr
 	public int monsterRange;
-	public int speed;
+	private int acc = 2000;
+	private int maxVel = 20;
 	int temp = 1;
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
@@ -20,8 +25,13 @@ public class Enemy_AI : MonoBehaviour {
 			Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
 			//if (vec.magnitude > monsterRange) {
 			vec.Normalize ();
-			rigidbody2D.AddForce (vec * speed * Time.deltaTime);
+			rigidbody2D.AddForce (vec * acc * Time.deltaTime);
+
+			if(rigidbody2D.velocity.magnitude > maxVel){
+				rigidbody2D.velocity = vec * maxVel;
+			}
 						/*	
+			}
 		} else if (vec == (Vector2)playerOne.position) {
 			attack (ref temp);			
 
