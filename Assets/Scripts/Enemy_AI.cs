@@ -10,9 +10,11 @@ public class Enemy_AI : MonoBehaviour {
 
 //attr
 	public int monsterRange;
-	private int acc = 2000;
-	private int maxVel = 20;
+	private int acc = 1000;
 	int temp = 1;
+
+///<K> ved ikke om vi skal skrive beskeder til hinanden sådan her :P det er hvertfald en mulighed [du kan bare slette dem når du kan se det jeg har gjort (småting)]
+
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
 		
@@ -20,25 +22,26 @@ public class Enemy_AI : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
-		if (playerSet) {
+		if (!playerSet)return; ///<K>if the playerSet is false then it return and therefore will not run the rest of update</K>
 
-			Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
-			//if (vec.magnitude > monsterRange) {
+		Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
+		if (vec.magnitude > monsterRange) {///<K>uncommented this (set monsterRange = 2, will stop right in front of player)</K>
 			vec.Normalize ();
 			rigidbody2D.AddForce (vec * acc * Time.deltaTime);
 
-			if(rigidbody2D.velocity.magnitude > maxVel){
+/*
+///Fandt ud af at der ikke er nogen grund til at bruge det her med den friction der er så kan vi bare slette det her :)
+			if(rigidbody2D.velocity.magnitude > maxVel)
 				rigidbody2D.velocity = vec * maxVel;
-			}
-						/*	
-			}
-		} else if (vec == (Vector2)playerOne.position) {
+*/
+		}
+					/*	
+		else if (vec == (Vector2)playerOne.position) {
 			attack (ref temp);			
 
 		} else if (vec == (Vector2)playerTwo.position) {
 			attack (ref temp);			
 		}*/
-		}
 
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF UPDATE
 	/// <summary>
