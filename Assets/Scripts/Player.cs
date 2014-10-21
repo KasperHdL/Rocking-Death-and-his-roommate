@@ -1,7 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Player : MonoBehaviour {
+
+	public ParticleSystem ps;
+	ParticleSystem.Particle[] particles = new ParticleSystem.Particle[16];
 
 	public Transform leftStick;
 	public Transform rightStick;
@@ -11,6 +15,8 @@ public class Player : MonoBehaviour {
 
 	private float endAttack;
 	private float attackLength = 2f;
+
+	private Queue<Attack> attackQueue;
 
 
 //movement
@@ -29,6 +35,8 @@ public class Player : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		attackQueue = new Queue<Attack>();
+
 		if(Settings.debug){
 			leftStick.renderer.enabled = true;
 			rightStick.renderer.enabled = true;
@@ -45,25 +53,30 @@ public class Player : MonoBehaviour {
 		if(!attacking){
 			movePlayer();
 			checkAttackButtons();
-		}else{
-			if(Time.time > endAttack){
-				attacking = false;
-				leftStick.localPosition = Vector3.zero;
-				rightStick.localPosition = Vector3.zero;
-			}else{
-				//attack
-			}
-		}	
-			debugStick();
+		}
+		debugStick();
+		//Debug.Log("left: " + leftAngle + ", right: " + rightAngle);
 	}
 
 //private
 	/// <summary>attacks in direction</summary>
-	/// <param name="direction">direction of attack(0-7, 0 is up, clockwise)</param>
-	private void attack(int direction){
-		Debug.Log(direction);
+	/// <param name="direction">direction of button pressed (0-7, 0 is up, clockwise)</param>
+	private void startAttack(int direction){
 		attacking = true;
 		endAttack = Time.time + attackLength;
+
+
+		attackQueue.Enqueue(new Attack(Random.value < .5f));
+		attackQueue.Enqueue(new Attack(Random.value < .5f));
+		attackQueue.Enqueue(new Attack(Random.value < .5f));
+		attackQueue.Enqueue(new Attack(Random.value < .5f));
+		StartCoroutine(checkAttackSeq(direction));
+	}
+
+
+	/// <summary>the player attacks in current direction
+	private void attack(int direction){
+		Debug.Log("Attacks with dPad " + direction + " attack");
 	}
 
 	/// <summary>Moves the player</summary>
@@ -91,7 +104,7 @@ public class Player : MonoBehaviour {
 				dir += 7;
 			
 
-			attack(dir);
+			startAttack(dir);
 
 		}else if(dY == -1){
 			//down
@@ -102,13 +115,13 @@ public class Player : MonoBehaviour {
 			else if(dX == -1)
 				dir++;
 
-			attack(dir);
+			startAttack(dir);
 		}else if(dX == 1){
 			//right
-			attack(2);
+			startAttack(2);
 		}else if(dX == -1){
 			//left
-			attack(6);
+			startAttack(6);
 		}
 	}
 
@@ -122,8 +135,8 @@ public class Player : MonoBehaviour {
 			left = new Vector2(Mathf.Abs(left.x) < deadzone ? 0:left.x,(Mathf.Abs(left.y) < deadzone ? 0:left.y));
 
 		//angle
-		leftAngle = -Mathf.Atan2(left.x,left.y) + Mathf.PI /2;
-		rightAngle = -Mathf.Atan2(right.x,right.y) + Mathf.PI /2;
+		leftAngle = Mathf.Atan2(left.y,left.x);
+		rightAngle = Mathf.Atan2(right.y,right.x);
 	}
 
 	/// <summary>moves the children object named left and rightStick</summary>
@@ -134,5 +147,96 @@ public class Player : MonoBehaviour {
 
 		if(right.magnitude != 0) rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle) * offset,Mathf.Sin(rightAngle) * offset,0);
 		else rightStick.localPosition = Vector3.zero;
+	}
+
+	///<summary>checks each frame if a current attack sequence is completed</summary>
+	IEnumerator checkAttackSeq(int direction) {
+		bool sequenceDone = false;
+		Attack att = attackQueue.Peek();
+		bool isLeft = att.left;
+
+		float startAngle = att.startAngle;
+		float endAngle = att.endAngle;
+
+		float angle = 0;
+
+		bool started = false;
+
+		float deltaAngle = endAngle - startAngle;
+		float step = Mathf.PI/8;
+		float checkRange = step/4;
+		int num = Mathf.RoundToInt(deltaAngle/step);
+
+		float[] angles = new float[num];
+		for(int i = 0;i<num;i++){
+			float angleStep = step*i;
+			angles[i] = startAngle + angleStep;
+			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,Mathf.Sin(startAngle + angleStep) * offset,0f);
+			particles[i].color = (isLeft ? Color.blue:Color.red);
+			particles[i].size = .5f;
+		}
+
+		ps.SetParticles(particles,num);
+
+		int pointsHit = 0;
+
+		while(!sequenceDone) {
+			if(isLeft)
+				angle = leftAngle;
+			else
+				angle = rightAngle;
+
+			if(Input.GetButton(name + " O")) {
+				attacking = false;
+				sequenceDone = true;
+
+				zeroParticleSize();
+			}
+			for(int i = 0;i<num;i++){
+				if(angles[i] != -1 && angle > angles[i] - checkRange && angle < angles[i] + checkRange){
+					pointsHit++;
+					angles[i] = -1;
+					particles[i].color = Color.green;
+					ps.SetParticles(particles,num);
+				}
+			}
+			if(pointsHit == num){
+				attackQueue.Dequeue();
+				Debug.Log("seq left " + attackQueue.Count);
+				if(attackQueue.Count == 0){
+					attacking = false;
+					attack(direction);
+
+					zeroParticleSize();
+				}else
+					StartCoroutine(checkAttackSeq(direction));
+
+				sequenceDone = true;
+			}
+
+			yield return new WaitForEndOfFrame();
+		}
+	}
+
+	///<summary>sets the particles to zero</summary>
+	private void zeroParticleSize(){	
+		for(int i = 0;i<particles.Length;i++)
+			particles[i].size = 0f;
+
+		ps.SetParticles(particles,particles.Length);
+	}
+
+}
+
+public struct Attack{
+	public bool left;
+	public float startAngle;
+	public float endAngle;
+
+	public Attack(bool left){
+		this.left = left;
+		float range = Random.Range(.5f,2f) * Mathf.PI;
+		startAngle = Random.Range(-Mathf.PI,Mathf.PI-range);
+		endAngle = startAngle + range;
 	}
 }
