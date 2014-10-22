@@ -1,12 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour {
 
-	public ParticleSystem ps;
-	ParticleSystem.Particle[] particles = new ParticleSystem.Particle[16];
 
+//health
+	private float health = 1f;
+	public Image healthCircle;
+
+//sticks
 	public Transform leftStick;
 	public Transform rightStick;
 
@@ -18,9 +22,20 @@ public class Player : MonoBehaviour {
 
 	private Queue<Attack> attackQueue;
 
+	//attack sequence particles
+		public ParticleSystem ps;
+		ParticleSystem.Particle[] particles = new ParticleSystem.Particle[16];
+
 
 //movement
 	private float acc = 4000f;
+	
+	//dash
+		public float dashForce = 40000f;
+		private float dashTime = 0f;
+		private float dashTimeLength = 2f;
+
+
 
 
 //axis control
@@ -51,12 +66,31 @@ public class Player : MonoBehaviour {
 		getAxis();
 
 		if(!attacking){
+			if(dashTime < Time.time && Input.GetButton(name + " L1")){
+				dashTime = Time.time + dashTimeLength;
+				rigidbody2D.AddForce(right * Time.deltaTime * dashForce);
+			}
 			movePlayer();
 			checkAttackButtons();
 		}
 		debugStick();
 		//Debug.Log("left: " + leftAngle + ", right: " + rightAngle);
 	}
+
+//public
+	/// <summary>player takes damage</summary>
+	/// <param name="amount">the amount of damage taken - 1 is full health</param>
+	public void takeDamage(float amount){
+		health -= amount;
+		if(health < 0f){
+			//Dead
+			Debug.Log("dead");
+		}
+
+		//update health Circle
+		healthCircle.fillAmount = health;
+	}
+
 
 //private
 	/// <summary>attacks in direction</summary>
