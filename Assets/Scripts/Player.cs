@@ -6,9 +6,21 @@ using UnityEngine.UI;
 public class Player : MonoBehaviour {
 
 
+	private Camera camera;
+
 //health
 	private float health = 1f;
 	public Image healthCircle;
+
+//energy
+	private float energy = 1f;
+	private float energyTick = 0.01f;
+	public Image energyCircle;
+	public RectTransform energyRect;
+
+	//dash
+		public float dashForce = 40000f;
+		private float dashUse = .51f;
 
 //sticks
 	public Transform leftStick;
@@ -30,10 +42,6 @@ public class Player : MonoBehaviour {
 //movement
 	private float acc = 4000f;
 	
-	//dash
-		public float dashForce = 40000f;
-		private float dashTime = 0f;
-		private float dashTimeLength = 2f;
 
 
 
@@ -51,6 +59,7 @@ public class Player : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		attackQueue = new Queue<Attack>();
+		camera = Camera.main;
 
 		if(Settings.debug){
 			leftStick.renderer.enabled = true;
@@ -64,16 +73,28 @@ public class Player : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		getAxis();
+		if(energy < 1f) energy += energyTick;
+		else energy = 1f;
 
 		if(!attacking){
-			if(dashTime < Time.time && Input.GetButton(name + " L1")){
-				dashTime = Time.time + dashTimeLength;
+			if(right.magnitude != 0 && energy > dashUse && Input.GetButtonDown(name + " L1")){
+				energy -= dashUse;
 				rigidbody2D.AddForce(right * Time.deltaTime * dashForce);
 			}
 			movePlayer();
 			checkAttackButtons();
 		}
 		debugStick();
+		if(energy != 1){
+			energyCircle.enabled = true;
+			energyCircle.fillAmount = energy;
+			Vector3 wPos = camera.WorldToScreenPoint(transform.position);
+			RectTransform r = energyRect;
+			r.position = new Vector2(wPos.x + 31f,wPos.y + 31f);
+			energyRect = r;
+		}else{
+			energyCircle.enabled = false;
+		}
 		//Debug.Log("left: " + leftAngle + ", right: " + rightAngle);
 	}
 
