@@ -68,6 +68,7 @@ public class SpawnAlgorithm : MonoBehaviour {
 			rn = Random.Range (0,360);
 			Transform t = Instantiate (enemyPrefab, new Vector2(Mathf.Cos ((float)rn)*rad, Mathf.Sin ((float)rn)*rad), Quaternion.identity) as Transform;
 			t.GetComponent<Enemy_AI> ().setPlayers (p1, p2);
+			transform.parent = t;
 			monsters.Add (t);
 			num++;
 		}

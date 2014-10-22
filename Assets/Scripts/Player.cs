@@ -32,9 +32,9 @@ public class Player : MonoBehaviour {
 
 //attack
 	public Transform attackCone;
-
 	public bool attacking;
 
+	private float attackAngle;
 	private float endAttack;
 	private float attackLength = 2f;
 
@@ -90,11 +90,11 @@ public class Player : MonoBehaviour {
 		}
 
 		if(!attacking){
-			if(right.magnitude != 0 && energy > dashUse && Input.GetButtonDown(name + " L1")){
+			if((right.magnitude != 0 || left.magnitude != 0) && energy > dashUse && Input.GetButtonDown(name + " L1")){
 				energy -= dashUse;
 				trail.time = 0.5f;
 				trailEnd = Time.time + trailLength;
-				rigidbody2D.AddForce(right * Time.deltaTime * dashForce);
+				rigidbody2D.AddForce(((right.magnitude == 0) ? left:right) * Time.deltaTime * dashForce);
 			}
 			movePlayer();
 			checkAttackButtons();
@@ -134,7 +134,8 @@ public class Player : MonoBehaviour {
 	private void startAttack(int direction){
 		attacking = true;
 		endAttack = Time.time + attackLength;
-
+		attackAngle = rightAngle;
+		Debug.Log("Attacks with dPad " + direction + " attack" + " angle: " + attackAngle);
 
 		attackQueue.Enqueue(new Attack(Random.value < .5f));
 		attackQueue.Enqueue(new Attack(Random.value < .5f));
@@ -146,12 +147,8 @@ public class Player : MonoBehaviour {
 
 	/// <summary>the player attacks in current direction
 	private void attack(int direction){
-		Debug.Log("Attacks with dPad " + direction + " attack");
-		Transform t = Instantiate(attackCone, transform.position + attackCone.localScale.y * new Vector3(Mathf.Cos(rightAngle),0,Mathf.Sin(rightAngle)),Quaternion.Euler(0,rightAngle,0)) as Transform;
-
-
-
-
+		Debug.Log("Attacks with dPad " + direction + " attack" + " angle: " + attackAngle);
+		Transform t = Instantiate(attackCone, transform.position + attackCone.localScale.y/2 * new Vector3(Mathf.Cos(attackAngle),0,Mathf.Sin(attackAngle)),Quaternion.Euler(0,0,((attackAngle-Mathf.PI/2)/Mathf.PI)*180)) as Transform;
 	}
 
 	/// <summary>Moves the player</summary>
@@ -273,7 +270,7 @@ public class Player : MonoBehaviour {
 			}
 			if(pointsHit == num){
 				attackQueue.Dequeue();
-				Debug.Log("seq left " + attackQueue.Count);
+				//Debug.Log("seq left " + attackQueue.Count);
 				if(attackQueue.Count == 0){
 					attacking = false;
 					attack(direction);
