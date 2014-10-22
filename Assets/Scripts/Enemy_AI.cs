@@ -12,22 +12,18 @@ public class Enemy_AI : MonoBehaviour {
 	public int monsterRange;
 	private int acc = 1000;
 	int temp = 1;
-	int health;
+	int health = 100;
+	int attackP;
 
 ///<K> ved ikke om vi skal skrive beskeder til hinanden sådan her :P det er hvertfald en mulighed [du kan bare slette dem når du kan se det jeg har gjort (småting)]
 
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
-		health = 100;
 
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF START
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
-
-		if (Input.GetKeyDown (KeyCode.A)) {
-			unlife (ref health, 110);		
-		}
 
 		if (!playerSet)return; ///<K>if the playerSet is false then it return and therefore will not run the rest of update</K>
 
@@ -72,7 +68,7 @@ public class Enemy_AI : MonoBehaviour {
 		_health =- _damage;
 		
 		if (_health <= 0) {
-			Debug.Log ("hey");
+			Debug.Log ("hey, im dead");
 			Destroy(gameObject);		
 		}
 		
