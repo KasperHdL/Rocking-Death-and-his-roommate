@@ -2,33 +2,53 @@ using UnityEngine;
 using System.Collections;
 
 public class Enemy_AI : MonoBehaviour {
+
+//player reference
 	private bool playerSet = false;
-	public Transform playerOne;
-	public Transform playerTwo;
+	Transform playerOne;
+	Transform playerTwo;
+
+//attr
 	public int monsterRange;
-	public int speed;
+	private int acc = 1000;
 	int temp = 1;
+	int health;
+
+///<K> ved ikke om vi skal skrive beskeder til hinanden sådan her :P det er hvertfald en mulighed [du kan bare slette dem når du kan se det jeg har gjort (småting)]
+
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
-		
+		health = 100;
+
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF START
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
-		if (playerSet) {
 
-			Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
-			//if (vec.magnitude > monsterRange) {
+		if (Input.GetKeyDown (KeyCode.A)) {
+			unlife (ref health, 110);		
+		}
+
+		if (!playerSet)return; ///<K>if the playerSet is false then it return and therefore will not run the rest of update</K>
+
+		Vector2 vec = returnClosestPlayer (playerOne.transform.position, playerTwo.transform.position);
+		if (vec.magnitude > monsterRange) {///<K>uncommented this (set monsterRange = 2, will stop right in front of player)</K>
 			vec.Normalize ();
-			rigidbody2D.AddForce (vec * speed * Time.deltaTime);
-						/*	
-		} else if (vec == (Vector2)playerOne.position) {
+			rigidbody2D.AddForce (vec * acc * Time.deltaTime);
+
+/*
+///Fandt ud af at der ikke er nogen grund til at bruge det her med den friction der er så kan vi bare slette det her :)
+			if(rigidbody2D.velocity.magnitude > maxVel)
+				rigidbody2D.velocity = vec * maxVel;
+*/
+		}
+					/*	
+		else if (vec == (Vector2)playerOne.position) {
 			attack (ref temp);			
 
 		} else if (vec == (Vector2)playerTwo.position) {
 			attack (ref temp);			
 		}*/
-		}
 
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF UPDATE
 	/// <summary>
@@ -46,6 +66,16 @@ public class Enemy_AI : MonoBehaviour {
 		} else {
 			return deltaTwo;
 		}
+	}
+
+	void unlife (ref int _health, int _damage){
+		_health =- _damage;
+		
+		if (_health <= 0) {
+			Debug.Log ("hey");
+			Destroy(gameObject);		
+		}
+		
 	}
 
 	/// <summary>
