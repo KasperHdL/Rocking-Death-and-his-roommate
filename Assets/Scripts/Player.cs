@@ -19,6 +19,10 @@ public class Player : MonoBehaviour {
 	public RectTransform energyRect;
 
 	//dash
+		public TrailRenderer trail;
+		private float trailEnd = 0f;
+		private float trailLength = 0.5f;
+
 		public float dashForce = 40000f;
 		private float dashUse = .51f;
 
@@ -27,6 +31,8 @@ public class Player : MonoBehaviour {
 	public Transform rightStick;
 
 //attack
+	public Transform attackCone;
+
 	public bool attacking;
 
 	private float endAttack;
@@ -59,6 +65,7 @@ public class Player : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		attackQueue = new Queue<Attack>();
+		trail.time = 0;
 		camera = Camera.main;
 
 		if(Settings.debug){
@@ -76,9 +83,17 @@ public class Player : MonoBehaviour {
 		if(energy < 1f) energy += energyTick;
 		else energy = 1f;
 
+		if(trailEnd > Time.time){
+			trail.time = trailEnd - Time.time;
+		}else{
+			trail.time = 0f;
+		}
+
 		if(!attacking){
 			if(right.magnitude != 0 && energy > dashUse && Input.GetButtonDown(name + " L1")){
 				energy -= dashUse;
+				trail.time = 0.5f;
+				trailEnd = Time.time + trailLength;
 				rigidbody2D.AddForce(right * Time.deltaTime * dashForce);
 			}
 			movePlayer();
@@ -132,16 +147,17 @@ public class Player : MonoBehaviour {
 	/// <summary>the player attacks in current direction
 	private void attack(int direction){
 		Debug.Log("Attacks with dPad " + direction + " attack");
+		Transform t = Instantiate(attackCone, transform.position + attackCone.localScale.y * new Vector3(Mathf.Cos(rightAngle),0,Mathf.Sin(rightAngle)),Quaternion.Euler(0,rightAngle,0)) as Transform;
+
+
+
+
 	}
 
 	/// <summary>Moves the player</summary>
 	private void movePlayer(){
 		//if attacking
 		rigidbody2D.AddForce(left * Time.deltaTime * acc);
-
-		if(right.magnitude != 0)
-			transform.rotation = Quaternion.LookRotation(right);
-
 	}
 	/// <summary>Checks if any attack button is pressed(or multiple) and activates attack in that direction</summary>
 	private void checkAttackButtons(){
