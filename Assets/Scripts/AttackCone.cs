@@ -34,6 +34,9 @@ public class AttackCone : MonoBehaviour {
 	}
 
 	void OnCollisionEnter2D(Collision2D col){
-		Debug.Log(col.gameObject.name);
+		if(col.gameObject.layer == 9){
+			col.gameObject.GetComponent<Enemy_AI>().takeDamage(50);
+		}
+		//Debug.Log(col.gameObject.name);
 	}
 }
