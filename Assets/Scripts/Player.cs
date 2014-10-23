@@ -9,7 +9,7 @@ public class Player : MonoBehaviour {
 	private Camera camera;
 
 //health
-	private float health = 1f;
+	public float health = 1f;
 	public Image healthCircle;
 
 //energy

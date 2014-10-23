@@ -27,9 +27,9 @@ public class SpawnAlgorithm : MonoBehaviour {
 	
 	// Use this for initialization
 	void Start () {
-		startDelay = 10.0f;
+		startDelay = 1.0f;
 		timer = 60.0f;
-		rad = 100;
+		rad = 50;
 		horde = 0;
 		diffMult = 1.2f;
 		checkMonsterCount = 20;
