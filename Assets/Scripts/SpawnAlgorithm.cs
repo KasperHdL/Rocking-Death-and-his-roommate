@@ -8,11 +8,9 @@ public class SpawnAlgorithm : MonoBehaviour {
 	
 	public Transform enemyPrefab;
 	
-	Transform p1;
-	Transform p2;
-	
 	int horde;
 	int checkMonsterCount;
+	int maxCount;
 	int rad;
 
 	bool check = true;
@@ -23,18 +21,14 @@ public class SpawnAlgorithm : MonoBehaviour {
 
 	ArrayList monsters = new ArrayList();
 	
-	private int rnd;
-	
 	// Use this for initialization
 	void Start () {
-		startDelay = 1.0f;
-		timer = 60.0f;
+		timer = 10.0f;
 		rad = 50;
 		horde = 0;
 		diffMult = 1.2f;
-		checkMonsterCount = 20;
-		p1 = GameObject.Find ("P1").transform;
-		p2 = GameObject.Find ("P2").transform;
+		checkMonsterCount = 5;
+		maxCount = 1000;
 		/*Debug.Log (p1);
 		Transform g = Instantiate (enemyPrefab, Vector2.zero, Quaternion.identity) as Transform;
 		g.GetComponent<Enemy_AI> ().setPlayers (p1, p2);*/
@@ -44,30 +38,31 @@ public class SpawnAlgorithm : MonoBehaviour {
 	void Update () {
 
 		if (Time.time > startDelay && check) {
-			Spawner (horde, rnd, checkMonsterCount);
+			Spawner (horde, checkMonsterCount);
 			check = false;
 		}
 
 		if (Time.time > timer) {
-			Debug.Log ("HEEEEY" + checkMonsterCount);
-			difficultyScalerWaveSender(ref diffMult, ref checkMonsterCount, ref timer);
+			difficultyScalerWaveSender();
 		}
 		
 	}
 
 
 
-	void difficultyScalerWaveSender(ref float _diffMult, ref int _checkMonsterCount, ref float _timer){ //Makes the wave count 20% larger, as well as spawns another wave
-		_checkMonsterCount =(int)(_checkMonsterCount * diffMult);
-		Spawner (horde, rnd, checkMonsterCount);
-		_timer = _timer + 60.0f;
+	void difficultyScalerWaveSender(){ //Makes the wave count 20% larger, as well as spawns another wave
+		timer += 60.0f;
+		checkMonsterCount =(int)(checkMonsterCount * diffMult);
+		if(checkMonsterCount > maxCount) checkMonsterCount = maxCount;
+		Spawner (horde, checkMonsterCount);
 	}
 
-	void Spawner(int num, int rn, int check){ //Simple spawner code, spawns currently check amount of units, spawns monsters on a random position in a circle.
+	void Spawner(int num, int check){ //Simple spawner code, spawns currently check amount of units, spawns monsters on a random position in a circle.
 		while (num < check) {
-			rn = Random.Range (0,360);
+			
+			int rn = Random.Range (0,10);
 			Transform t = Instantiate (enemyPrefab, new Vector2(Mathf.Cos ((float)rn)*rad, Mathf.Sin ((float)rn)*rad), Quaternion.identity) as Transform;
-			t.GetComponent<Enemy_AI> ().setPlayers (p1, p2);
+			t.parent = transform;
 			monsters.Add (t);
 			num++;
 		}

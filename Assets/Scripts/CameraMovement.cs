@@ -31,7 +31,6 @@ public class CameraMovement : MonoBehaviour {
 		float pixelSize = ((delta.x < delta.y) ? camera.pixelHeight:camera.pixelWidth);
 		float pad = padding * pixelSize/500f;
 		//Debug.Log("p1: " + w1 + ", p2: " + p2 + " delta: " + delta + " size: " + camera.orthographicSize + " cW " + camera.pixelWidth + ", cH " + camera.pixelHeight);
-		Debug.Log("lD " + largestDelta + " pad " + pad );
 		if(targetSize >= minSize){
 			if(largestDelta > pixelSize - pad)
 				targetSize += increment;
