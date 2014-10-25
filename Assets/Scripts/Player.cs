@@ -42,6 +42,7 @@ public class Player : MonoBehaviour {
 	public bool attacking;
 	public bool directingAttack;
 
+
 	private float attackAngle;
 	private float endAttack;
 	private float attackLength = 2f;
@@ -86,7 +87,6 @@ public class Player : MonoBehaviour {
 		attackQueue = new Queue<AttackElement>();
 		trail.time = 0;
 		cam = Camera.main;
-		anim.SetBool("moving",false);
 
 		if(Settings.debug){
 			leftStick.renderer.enabled = true;
@@ -110,7 +110,7 @@ public class Player : MonoBehaviour {
 			trail.time = 0f;
 		}
 
-		if(!attacking){
+		if(!attacking && !anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")){
 			if((right.magnitude != 0 || left.magnitude != 0) && energy > dashUse && Input.GetButtonDown(name + " L1")){
 				energy -= dashUse;
 				trail.time = 0.5f;
@@ -187,8 +187,8 @@ public class Player : MonoBehaviour {
 	/// <summary>the player attacks in current direction
 	private void attack(int dPad){
 //		Debug.Log("Attacks with dPad " + direction + " attack" + " angle: " + attackAngle);
-		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/2) * new Vector3(Mathf.Cos(attackAngle),1f,Mathf.Sin(attackAngle)),Quaternion.Euler(0,(-(attackAngle - PI/2)/PI)*180,0)) as Transform;
-		
+		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/1.75f) * new Vector3(Mathf.Cos(attackAngle),0f,Mathf.Sin(attackAngle)),Quaternion.Euler(0,(-(attackAngle - PI/2)/PI)*180,0)) as Transform;
+		t.position += Vector3.up * ((name == "P2") ? 1f:2f);
         Physics.IgnoreCollision(t.collider, collider);
 	}
 
@@ -331,6 +331,7 @@ public class Player : MonoBehaviour {
 				if(attackQueue.Count == 0){
 					attacking = false;
 					attack(direction);
+					anim.Play("Attack");
 
 					zeroParticleSize();
 				}else

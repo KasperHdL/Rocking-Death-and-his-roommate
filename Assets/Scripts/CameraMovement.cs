@@ -6,6 +6,8 @@ public class CameraMovement : MonoBehaviour {
 	public Transform p1;
 	public Transform p2;
 
+	public Vector3 pos;
+
 	private float padding = 300;
 
 	private float minSize = 8;
@@ -16,6 +18,11 @@ public class CameraMovement : MonoBehaviour {
 	private float increment = 0.1f;
 
 	private Vector3 offset = new Vector3(0,15,-25);
+
+	private Vector3 shake = new Vector3(0,0,0);
+	private float shakeEnd = 0f;
+	private float shakeLength = 1f;
+
 
 	// Use this for initialization
 	void Start () {
@@ -45,8 +52,21 @@ public class CameraMovement : MonoBehaviour {
 
 		camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, targetSize, 0.1f);
 */
+
+		
+		if(shakeEnd < Time.time)
+			shake = Vector3.zero;
+		else
+			shake = new Vector3(Random.Range(-.1f,.1f),Random.Range(-.1f,.1f),Random.Range(-.1f,.1f));
+
 		//world
 		Vector3 delta = p2.position - p1.position;
-		transform.position = Vector3.Lerp(transform.position, p1.position + delta/2 - Vector3.forward*delta.z/20 +offset, 0.1f);
+		pos = Vector3.Lerp(transform.position, p1.position + delta/2 - Vector3.forward*delta.z/20 +offset, 0.1f);
+		transform.position = pos + shake;
+	}
+
+//public
+	public void ScreenShake(){
+		shakeEnd = Time.time + shakeLength;
 	}
 }

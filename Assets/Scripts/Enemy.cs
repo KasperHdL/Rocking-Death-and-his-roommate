@@ -36,7 +36,7 @@ public class Enemy : MonoBehaviour {
 		Vector3 vec = returnClosestPlayerPos (p1.transform.position, p2.transform.position);
 		if(!player1.alive && player2.alive)vec = p2.transform.position - transform.position;
 		else if(!player2.alive && player1.alive)vec = p1.transform.position - transform.position;
-		
+
 		model.localScale = new Vector3(Mathf.Sign(vec.x),1f,1f);
 
 		if (vec.magnitude > monsterRange) {
