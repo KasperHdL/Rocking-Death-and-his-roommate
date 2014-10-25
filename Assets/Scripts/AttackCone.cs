@@ -7,7 +7,7 @@ public class AttackCone : MonoBehaviour {
 
 	float startTime;
 	int numFrames = 3;
-	float lifeSpan = 1f;
+	float lifeSpan = 1.5f;
 
 	float step;
 
@@ -21,6 +21,7 @@ public class AttackCone : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		cam = Camera.main;
+		cam.GetComponent<CameraMovement>().ScreenShake();
 		step = lifeSpan/numFrames;
 		tex = new Material(originalTex);
 
@@ -53,10 +54,10 @@ public class AttackCone : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider col){
-		int layer = col.gameObject.layer;
-		if(layer == 9){ //enemy
+		string tag = col.gameObject.tag;
+		if(tag == "Enemy"){ //enemy
 			col.gameObject.GetComponent<Enemy>().takeDamage(1f);
-		}else if(layer == 10){ //player
+		}else if(tag == "Player"){ //player
 			col.gameObject.GetComponent<Player>().heal(.25f);
 		}
 		//Debug.Log(col.gameObject.name);
