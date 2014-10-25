@@ -56,9 +56,9 @@ public class AttackCone : MonoBehaviour {
 	void OnTriggerEnter(Collider col){
 		string tag = col.gameObject.tag;
 		if(tag == "Enemy"){ //enemy
-			col.gameObject.GetComponent<Enemy>().takeDamage(1f);
+			col.gameObject.GetComponent<Enemy>().takeDamage(.5f);
 		}else if(tag == "Player"){ //player
-			col.gameObject.GetComponent<Player>().heal(.25f);
+			col.gameObject.GetComponent<Player>().heal(.1f);
 		}
 		//Debug.Log(col.gameObject.name);
 	}

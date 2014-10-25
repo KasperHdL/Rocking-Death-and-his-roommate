@@ -6,6 +6,8 @@ public class Enemy : MonoBehaviour {
 	public SpawnAlgorithm spawner;
 	public Transform model;
 
+	public Animator anim;
+
 //player reference
 	private Transform p1;
 	private Transform p2;
@@ -40,6 +42,8 @@ public class Enemy : MonoBehaviour {
 		model.localScale = new Vector3(Mathf.Sign(vec.x),1f,1f);
 
 		if (vec.magnitude > monsterRange) {
+			anim.SetBool("attacking",false);
+
 			vec.Normalize ();
 			rigidbody.AddForce (vec * acc * Time.deltaTime);
 		}else if(nextAttack < Time.time){
@@ -68,6 +72,7 @@ public class Enemy : MonoBehaviour {
 
 	
 	private void attack(Transform player){//Takes a player and removes an amount from his health
+		anim.SetBool("attacking",true);
 		player.GetComponent<Player> ().takeDamage (damage);
 	}
 

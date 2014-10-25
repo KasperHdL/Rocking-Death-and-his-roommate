@@ -55,9 +55,9 @@ public class SpawnAlgorithm : MonoBehaviour {
 		if(numEnemies > maxCount)return;
 		while (numEnemies < checkNum) {
 			
-			int rn = Random.Range (0,4);
+			int rn = Random.Range (-2,3);
 
-			Transform t = Instantiate (enemyPrefab, new Vector3(Mathf.Cos ((float)rn*Mathf.PI/2) * 40f,0f, Mathf.Sin ((float)rn*Mathf.PI/2) * 15f), Quaternion.identity) as Transform;
+			Transform t = Instantiate (enemyPrefab, new Vector3(Mathf.Cos ((float)rn*Mathf.PI/2) * 70f,0f, Mathf.Sin ((float)rn*Mathf.PI/2) * 60f), Quaternion.identity) as Transform;
 			t.parent = transform;
 			t.GetComponent<Enemy>().spawner = this;
 			numEnemies++;
