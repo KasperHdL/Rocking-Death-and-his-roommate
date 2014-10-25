@@ -6,6 +6,8 @@ using UnityEngine.UI;
 public class Player : MonoBehaviour {
 	private Camera cam;
 
+	public Animator anim;
+
 	private const float PI = Mathf.PI;
 
 	public Transform model;
@@ -84,6 +86,7 @@ public class Player : MonoBehaviour {
 		attackQueue = new Queue<AttackElement>();
 		trail.time = 0;
 		cam = Camera.main;
+		anim.SetBool("moving",false);
 
 		if(Settings.debug){
 			leftStick.renderer.enabled = true;
@@ -140,7 +143,10 @@ public class Player : MonoBehaviour {
 			//Dead
 			alive = false;
 			collider.enabled = false;
+			transform.Rotate(90,0,0);
+			rigidbody.useGravity = false;
 			Debug.Log("dead");
+			anim.SetBool("dead",true);
 		}
 
 		//update health Circle
@@ -158,6 +164,7 @@ public class Player : MonoBehaviour {
 	/// <param name="dPad">direction of button pressed (0-7, 0 is up, clockwise)</param>
 	private void startAttack(int dPad){
 		//debug line
+		anim.SetBool("moving",false);
 			dPad = Mathf.Clamp(dPad,0,sequences.Length-1);
 		attacking = true;
 		endAttack = Time.time + attackLength;
@@ -188,11 +195,15 @@ public class Player : MonoBehaviour {
 	/// <summary>Moves the player</summary>
 	private void movePlayer(){
 		//if attacking
-		rigidbody.AddForce(left * Time.deltaTime * acc);
+		rigidbody.AddForce((left + right * 0.3f) * Time.deltaTime * acc);
 		if(right.x > 0 && mirrored || (right.x < 0 && !mirrored)){
 			model.localScale = new Vector3(-1 * model.localScale.x,1f,1f);
 			mirrored = !mirrored;
 		}
+		if(left.magnitude != 0) 
+			anim.SetBool("moving",true);
+		else
+			anim.SetBool("moving",false);
 	}
 
 	/// <summary>Checks if any attack button is pressed(or multiple) and activates attack in that direction</summary>
@@ -302,6 +313,7 @@ public class Player : MonoBehaviour {
 			if(Input.GetButton(name + " O")) {
 				attacking = false;
 				sequenceDone = true;
+				attackQueue.Clear();
 
 				zeroParticleSize();
 			}

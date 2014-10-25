@@ -9,7 +9,7 @@ public class SpawnAlgorithm : MonoBehaviour {
 	public Transform enemyPrefab;
 	
 	public int numEnemies;
-	int checkNum;
+	public float checkNum;
 	int maxCount;
 
 	bool check = true;
@@ -47,7 +47,7 @@ public class SpawnAlgorithm : MonoBehaviour {
 
 
 	void difficultyScalerWaveSender(){ //Makes the wave count 20% larger, as well as spawns another wave
-		timer += 1.0f;
+		timer += 5.0f;
 		Spawner ();
 	}
 
@@ -57,11 +57,11 @@ public class SpawnAlgorithm : MonoBehaviour {
 			
 			int rn = Random.Range (0,4);
 
-			Transform t = Instantiate (enemyPrefab, new Vector3(Mathf.Cos ((float)rn*Mathf.PI/2) * 40,0f, Mathf.Sin ((float)rn*Mathf.PI/2) * 15), Quaternion.identity) as Transform;
+			Transform t = Instantiate (enemyPrefab, new Vector3(Mathf.Cos ((float)rn*Mathf.PI/2) * 40f,0f, Mathf.Sin ((float)rn*Mathf.PI/2) * 15f), Quaternion.identity) as Transform;
 			t.parent = transform;
 			t.GetComponent<Enemy>().spawner = this;
 			numEnemies++;
 		}
-		checkNum = (int)Mathf.Pow(checkNum,2);
+		checkNum = checkNum * diffMult;
 	}
 }

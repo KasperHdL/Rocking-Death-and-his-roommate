@@ -53,10 +53,10 @@ public class AttackCone : MonoBehaviour {
 	}
 
 	void OnTriggerEnter(Collider col){
-		string tag = col.gameObject.tag;
-		if(tag == "Enemy"){
+		int layer = col.gameObject.layer;
+		if(layer == 9){ //enemy
 			col.gameObject.GetComponent<Enemy>().takeDamage(1f);
-		}else if(tag == "Player"){
+		}else if(layer == 10){ //player
 			col.gameObject.GetComponent<Player>().heal(.25f);
 		}
 		//Debug.Log(col.gameObject.name);
