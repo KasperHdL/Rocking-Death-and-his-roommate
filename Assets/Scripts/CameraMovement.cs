@@ -15,6 +15,8 @@ public class CameraMovement : MonoBehaviour {
 
 	private float increment = 0.1f;
 
+	private Vector3 offset = new Vector3(0,15,-25);
+
 	// Use this for initialization
 	void Start () {
 		//start Coroutine that lerps pos and size
@@ -22,13 +24,14 @@ public class CameraMovement : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		/*
 		//screen
 		Vector3 w1 = camera.WorldToScreenPoint(p1.position);
 		Vector3 w2 = camera.WorldToScreenPoint(p2.position);
 
 		Vector3 delta = w2 - w1;
-		float largestDelta = Mathf.Abs((Mathf.Abs(delta.x) < Mathf.Abs(delta.y)) ? delta.y:delta.x);
-		float pixelSize = ((delta.x < delta.y) ? camera.pixelHeight:camera.pixelWidth);
+		float largestDelta = Mathf.Abs((Mathf.Abs(delta.x) < Mathf.Abs(delta.z)) ? delta.z:delta.x);
+		float pixelSize = ((delta.x < delta.z) ? camera.pixelHeight:camera.pixelWidth);
 		float pad = padding * pixelSize/500f;
 		//Debug.Log("p1: " + w1 + ", p2: " + p2 + " delta: " + delta + " size: " + camera.orthographicSize + " cW " + camera.pixelWidth + ", cH " + camera.pixelHeight);
 		if(targetSize >= minSize){
@@ -41,9 +44,9 @@ public class CameraMovement : MonoBehaviour {
 			targetSize = minSize;
 
 		camera.orthographicSize = Mathf.Lerp(camera.orthographicSize, targetSize, 0.1f);
-
+*/
 		//world
-		delta = p2.position - p1.position;
-		transform.position = Vector3.Lerp(transform.position, p1.position + delta/2 + Vector3.forward * -10, 0.1f);
+		Vector3 delta = p2.position - p1.position;
+		transform.position = Vector3.Lerp(transform.position, p1.position + delta/2 - Vector3.forward*delta.z/20 +offset, 0.1f);
 	}
 }
