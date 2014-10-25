@@ -8,9 +8,14 @@ public class Player : MonoBehaviour {
 
 	private const float PI = Mathf.PI;
 
+	public Transform model;
+	public bool mirrored = false;
+
 //health
 	public float health = 1f;
 	public Image healthCircle;
+
+	public bool alive = true;
 
 //energy
 	private float energy = 1f;
@@ -51,14 +56,11 @@ public class Player : MonoBehaviour {
 				// ele params = bool isLeft, float start, float range
 				new AttackSequence(1f,2f,1f,
 					new AttackElement(true,-PI/2,PI),
-					new AttackElement(true,-PI/2,PI),
-					new AttackElement(false,-PI/2,PI)
+					new AttackElement(true,-PI/2,PI)
 				),
 				new AttackSequence(2f,2f,2f,
 					new AttackElement(false,-PI,PI*1.5f),
-					new AttackElement(true,-PI/2,PI),
-					new AttackElement(true,0,PI),
-					new AttackElement(false,-PI/2,PI)
+					new AttackElement(true,-PI/2,PI)
 				),
 
 			};
@@ -71,8 +73,8 @@ public class Player : MonoBehaviour {
 	private float offset = 2;
 	private float deadzone = 0f;
 
-	private Vector2 left;
-	private Vector2 right;
+	private Vector3 left;
+	private Vector3 right;
 
 	private float leftAngle;
 	private float rightAngle;
@@ -94,6 +96,7 @@ public class Player : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if(!alive) return;
 		getAxis();
 		if(energy < 1f) energy += energyTick;
 		else energy = 1f;
@@ -109,7 +112,7 @@ public class Player : MonoBehaviour {
 				energy -= dashUse;
 				trail.time = 0.5f;
 				trailEnd = Time.time + trailLength;
-				rigidbody2D.AddForce(((right.magnitude == 0) ? left:right) * Time.deltaTime * dashForce);
+				rigidbody.AddForce(((right.magnitude == 0) ? left:right) * Time.deltaTime * dashForce);
 			}
 			movePlayer();
 			checkAttackButtons();
@@ -120,7 +123,7 @@ public class Player : MonoBehaviour {
 			energyCircle.fillAmount = energy;
 			Vector3 wPos = cam.WorldToScreenPoint(transform.position);
 			RectTransform r = energyRect;
-			r.position = new Vector2(wPos.x + 31f,wPos.y + 31f);
+			r.position = new Vector2(wPos.x + 31f,wPos.y + 41f);
 			energyRect = r;
 		}else{
 			energyCircle.enabled = false;
@@ -135,6 +138,8 @@ public class Player : MonoBehaviour {
 		health -= amount;
 		if(health < 0f){
 			//Dead
+			alive = false;
+			collider.enabled = false;
 			Debug.Log("dead");
 		}
 
@@ -142,6 +147,11 @@ public class Player : MonoBehaviour {
 		healthCircle.fillAmount = health;
 	}
 
+	public void heal(float amount){
+		health += amount;
+		if(health > 1f) health = 1f;
+		healthCircle.fillAmount = health;
+	}
 
 //private
 	/// <summary>attacks in direction</summary>
@@ -170,14 +180,19 @@ public class Player : MonoBehaviour {
 	/// <summary>the player attacks in current direction
 	private void attack(int dPad){
 //		Debug.Log("Attacks with dPad " + direction + " attack" + " angle: " + attackAngle);
-		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/2) * new Vector3(Mathf.Cos(attackAngle),Mathf.Sin(attackAngle)),Quaternion.Euler(0,0,((attackAngle-PI/2)/PI)*180)) as Transform;
+		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/2) * new Vector3(Mathf.Cos(attackAngle),1f,Mathf.Sin(attackAngle)),Quaternion.Euler(0,(-(attackAngle - PI/2)/PI)*180,0)) as Transform;
 		
+        Physics.IgnoreCollision(t.collider, collider);
 	}
 
 	/// <summary>Moves the player</summary>
 	private void movePlayer(){
 		//if attacking
-		rigidbody2D.AddForce(left * Time.deltaTime * acc);
+		rigidbody.AddForce(left * Time.deltaTime * acc);
+		if(right.x > 0 && mirrored || (right.x < 0 && !mirrored)){
+			model.localScale = new Vector3(-1 * model.localScale.x,1f,1f);
+			mirrored = !mirrored;
+		}
 	}
 
 	/// <summary>Checks if any attack button is pressed(or multiple) and activates attack in that direction</summary>
@@ -219,30 +234,30 @@ public class Player : MonoBehaviour {
 
 	/// <summary>Gets the axis for the sticks and sets left and right stick and their angle</summary>
 	private void getAxis(){
-		left = new Vector2(Input.GetAxis(name + " Left Stick X"),Input.GetAxis(name + " Left Stick Y"));
-		right = new Vector2(Input.GetAxis(name + " Right Stick X"),Input.GetAxis(name + " Right Stick Y"));
+		left = new Vector3(Input.GetAxis(name + " Left Stick X"),0f,Input.GetAxis(name + " Left Stick Y"));
+		right = new Vector3(Input.GetAxis(name + " Right Stick X"),0f,Input.GetAxis(name + " Right Stick Y"));
 
 		//deadzone if attacking
 		if(attacking)
-			left = new Vector2(Mathf.Abs(left.x) < deadzone ? 0:left.x,(Mathf.Abs(left.y) < deadzone ? 0:left.y));
+			left = new Vector3(Mathf.Abs(left.x) < deadzone ? 0:left.x,0f,(Mathf.Abs(left.z) < deadzone ? 0:left.z));
 
 		//angle
-		leftAngle = Mathf.Atan2(left.y,left.x);
-		rightAngle = Mathf.Atan2(right.y,right.x);
+		leftAngle = Mathf.Atan2(left.z,left.x);
+		rightAngle = Mathf.Atan2(right.z,right.x);
 	}
 
 	/// <summary>moves the children object named left and rightStick</summary>
 	private void debugStick(){
 		//set position of debug sticks
 		if(left.magnitude != 0){
-			leftStick.position = transform.position + new Vector3(Mathf.Cos(leftAngle) * offset,Mathf.Sin(leftAngle) * offset,-6f);
-			leftStick.rotation = Quaternion.LookRotation(left, -Vector3.forward);
+			leftStick.position = transform.position + new Vector3(Mathf.Cos(leftAngle) * offset,0f,Mathf.Sin(leftAngle) * offset);
+			leftStick.rotation = Quaternion.LookRotation(left);
 
 		}else leftStick.localPosition = Vector3.zero;
 
 		if(right.magnitude != 0){
-			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle) * offset,Mathf.Sin(rightAngle) * offset,-6f);
-			rightStick.rotation = Quaternion.LookRotation(right, -Vector3.forward);
+			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle) * offset,0f,Mathf.Sin(rightAngle) * offset);
+			rightStick.rotation = Quaternion.LookRotation(right);
 
 		}else rightStick.localPosition = Vector3.zero;
 
@@ -269,7 +284,7 @@ public class Player : MonoBehaviour {
 		for(int i = 0;i<num;i++){
 			float angleStep = step*i;
 			angles[i] = startAngle + angleStep;
-			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,Mathf.Sin(startAngle + angleStep) * offset,0f);
+			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,0f,Mathf.Sin(startAngle + angleStep) * offset);
 			particles[i].color = (isLeft ? Color.blue:Color.red);
 			particles[i].size = .5f;
 		}
@@ -325,6 +340,8 @@ public class Player : MonoBehaviour {
 	}
 
 }
+
+//structs
 
 public struct AttackElement{
 	public bool left;

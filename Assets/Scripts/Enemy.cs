@@ -3,9 +3,15 @@ using System.Collections;
 
 public class Enemy : MonoBehaviour {
 
+	public SpawnAlgorithm spawner;
+	public Transform model;
+
 //player reference
 	private Transform p1;
 	private Transform p2;
+
+	private Player player1;
+	private Player player2;
 
 //attr
 	public float monsterRange;
@@ -13,26 +19,34 @@ public class Enemy : MonoBehaviour {
 	float health = 1;
 
 //attack
-	float attDelay = 0.2f;
+	float attDelay = 0.4f;
 	float nextAttack = 0f;
-	float damage = 0.20f;
+	float damage = 0.10f;
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
 		p1 = GameHandler.p1Transform;
 		p2 = GameHandler.p2Transform;
+
+		player1 = GameHandler.p1;
+		player2 = GameHandler.p2;
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF START
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
-		Vector2 vec = returnClosestPlayerPos (p1.transform.position, p2.transform.position);
-		transform.rotation = Quaternion.LookRotation(vec,-Vector3.forward);
+		Vector3 vec = returnClosestPlayerPos (p1.transform.position, p2.transform.position);
+
+		if(!player1.alive)vec = p2.transform.position;
+		else if(!player2.alive)vec = p1.transform.position;
+
+		model.localScale = new Vector3(Mathf.Sign(vec.x),1f,1f);
 
 		if (vec.magnitude > monsterRange) {
 			vec.Normalize ();
-			rigidbody2D.AddForce (vec * acc * Time.deltaTime);
+			rigidbody.AddForce (vec * acc * Time.deltaTime);
 		}else if(nextAttack < Time.time){
 			nextAttack = Time.time + attDelay;
-		    RaycastHit2D hit = Physics2D.Raycast(transform.position, transform.forward, monsterRange,1<<10);
+		    RaycastHit hit;
+		    Physics.Raycast(transform.position, vec, out hit, monsterRange,1<<10);
 		    if(hit.collider != null)
 		    	attack(hit.transform);
 		}
@@ -42,9 +56,9 @@ public class Enemy : MonoBehaviour {
 
 //private
 
-	private Vector2 returnClosestPlayerPos (Vector2 one, Vector2 two){//Returns the closest player's position
-		Vector2 deltaOne = one-(Vector2)transform.position;
-		Vector2 deltaTwo = two-(Vector2)transform.position;
+	private Vector3 returnClosestPlayerPos (Vector3 one, Vector3 two){//Returns the closest player's position
+		Vector3 deltaOne = one-transform.position;
+		Vector3 deltaTwo = two-transform.position;
 		
 		if (deltaOne.magnitude <= deltaTwo.magnitude) {
 			return deltaOne;
@@ -65,6 +79,7 @@ public class Enemy : MonoBehaviour {
 		health =- dmg;
 		
 		if (health <= 0) {
+			spawner.numEnemies--;
 			Destroy(gameObject);		
 		}
 		

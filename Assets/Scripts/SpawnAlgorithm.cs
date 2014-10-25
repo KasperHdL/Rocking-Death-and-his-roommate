@@ -8,27 +8,23 @@ public class SpawnAlgorithm : MonoBehaviour {
 	
 	public Transform enemyPrefab;
 	
-	int horde;
-	int checkMonsterCount;
+	public int numEnemies;
+	int checkNum;
 	int maxCount;
-	int rad;
 
 	bool check = true;
 
 	float startDelay;
 	float timer;
 	float diffMult;
-
-	ArrayList monsters = new ArrayList();
 	
 	// Use this for initialization
 	void Start () {
-		timer = 10.0f;
-		rad = 50;
-		horde = 0;
-		diffMult = 1.2f;
-		checkMonsterCount = 5;
-		maxCount = 1000;
+		timer = 1.0f;
+		numEnemies = 0;
+		diffMult = 1.1f;
+		checkNum = 2;
+		maxCount = 200;
 		/*Debug.Log (p1);
 		Transform g = Instantiate (enemyPrefab, Vector2.zero, Quaternion.identity) as Transform;
 		g.GetComponent<Enemy_AI> ().setPlayers (p1, p2);*/
@@ -38,7 +34,7 @@ public class SpawnAlgorithm : MonoBehaviour {
 	void Update () {
 
 		if (Time.time > startDelay && check) {
-			Spawner (horde, checkMonsterCount);
+			Spawner ();
 			check = false;
 		}
 
@@ -51,20 +47,21 @@ public class SpawnAlgorithm : MonoBehaviour {
 
 
 	void difficultyScalerWaveSender(){ //Makes the wave count 20% larger, as well as spawns another wave
-		timer += 60.0f;
-		checkMonsterCount =(int)(checkMonsterCount * diffMult);
-		if(checkMonsterCount > maxCount) checkMonsterCount = maxCount;
-		Spawner (horde, checkMonsterCount);
+		timer += 1.0f;
+		Spawner ();
 	}
 
-	void Spawner(int num, int check){ //Simple spawner code, spawns currently check amount of units, spawns monsters on a random position in a circle.
-		while (num < check) {
+	void Spawner(){ //Simple spawner code, spawns currently check amount of units, spawns monsters on a random position in a circle.
+		if(numEnemies > maxCount)return;
+		while (numEnemies < checkNum) {
 			
-			int rn = Random.Range (0,10);
-			Transform t = Instantiate (enemyPrefab, new Vector2(Mathf.Cos ((float)rn)*rad, Mathf.Sin ((float)rn)*rad), Quaternion.identity) as Transform;
+			int rn = Random.Range (0,4);
+
+			Transform t = Instantiate (enemyPrefab, new Vector3(Mathf.Cos ((float)rn*Mathf.PI/2) * 40,0f, Mathf.Sin ((float)rn*Mathf.PI/2) * 15), Quaternion.identity) as Transform;
 			t.parent = transform;
-			monsters.Add (t);
-			num++;
+			t.GetComponent<Enemy>().spawner = this;
+			numEnemies++;
 		}
+		checkNum = (int)Mathf.Pow(checkNum,2);
 	}
 }
