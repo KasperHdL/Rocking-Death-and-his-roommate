@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -30,8 +30,8 @@ public class Player : MonoBehaviour {
 		private float trailEnd = 0f;
 		private float trailLength = 0.5f;
 
-		public float dashForce = 40000f;
-		private float dashUse = .51f;
+		public float dashForce = 8000f;
+		private float dashUse = .35f;
 
 //sticks
 	public Transform leftStick;
@@ -40,33 +40,14 @@ public class Player : MonoBehaviour {
 //attack
 	public Transform attackCone;
 	public bool attacking;
-	public bool directingAttack;
 
-
+	private Vector3 attackDirection;
 	private float attackAngle;
-	private float endAttack;
-	private float attackLength = 2f;
-
-	private Queue<AttackElement> attackQueue;
 
 	//attack sequence particles
+		public Transform attackUI;
 		public ParticleSystem ps;
 		ParticleSystem.Particle[] particles = new ParticleSystem.Particle[16];
-
-	//attack Sequences
-		AttackSequence[] sequences = new AttackSequence[2]{	
-				// seq params = float dmg, float time, float mult, params AttackElement[] attacks
-				// ele params = bool isLeft, float start, float range
-				new AttackSequence(1f,2f,1f,
-					new AttackElement(true,-PI/2,PI),
-					new AttackElement(true,-PI/2,PI)
-				),
-				new AttackSequence(2f,2f,2f,
-					new AttackElement(false,-PI,PI*1.5f),
-					new AttackElement(true,-PI/2,PI)
-				),
-
-			};
 
 //movement
 	private float acc = 4000f;
@@ -84,7 +65,6 @@ public class Player : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		attackQueue = new Queue<AttackElement>();
 		trail.time = 0;
 		cam = Camera.main;
 
@@ -111,15 +91,19 @@ public class Player : MonoBehaviour {
 		}
 
 		if(!attacking && !anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")){
-			if((right.magnitude != 0 || left.magnitude != 0) && energy > dashUse && Input.GetButtonDown(name + " L1")){
+			if(left.magnitude != 0 && energy > dashUse && Input.GetButtonDown(name + " R1")){
 				energy -= dashUse;
 				trail.time = 0.5f;
 				trailEnd = Time.time + trailLength;
-				rigidbody.AddForce(((right.magnitude == 0) ? left:right) * Time.deltaTime * dashForce);
+				rigidbody.AddForce(left * Time.deltaTime * dashForce);
 			}
 			movePlayer();
-			checkAttackButtons();
+			if(Input.GetButtonDown(name + " L1"))
+				startAttack();
+		}else if(attacking && Input.GetButtonUp(name + " L1")){
+			attacking = false;
 		}
+
 		debugStick();
 		if(energy != 1){
 			energyCircle.enabled = true;
@@ -134,69 +118,13 @@ public class Player : MonoBehaviour {
 		//Debug.Log("left: " + leftAngle + ", right: " + rightAngle);
 	}
 
-//public
-	/// <summary>player takes damage</summary>
-	/// <param name="amount">the amount of damage taken - 1 is full health</param>
-	public void takeDamage(float amount){
-		health -= amount;
-		if(health < 0f){
-			//Dead
-			alive = false;
-			collider.enabled = false;
-			transform.Rotate(90,0,0);
-			rigidbody.useGravity = false;
-			Debug.Log("dead");
-			anim.SetBool("dead",true);
-		}
-
-		//update health Circle
-		healthCircle.fillAmount = health;
-	}
-
-	public void heal(float amount){
-		health += amount;
-		if(health > 1f) health = 1f;
-		healthCircle.fillAmount = health;
-	}
-
 //private
-	/// <summary>attacks in direction</summary>
-	/// <param name="dPad">direction of button pressed (0-7, 0 is up, clockwise)</param>
-	private void startAttack(int dPad){
-		//debug line
-		anim.SetBool("moving",false);
-			dPad = Mathf.Clamp(dPad,0,sequences.Length-1);
-		attacking = true;
-		endAttack = Time.time + attackLength;
-		attackAngle = rightAngle;
-		//Debug.Log("Attacks with dPad " + dPad + " attack" + " angle: " + attackAngle);
-
-		//queue a sequence
-		queueSequence(dPad);
-
-		StartCoroutine(checkAttackElement(dPad));
-	}
-
-	private void queueSequence(int d){
-
-		for(int i = 0;i<sequences[d].attElements.Length;i++)
-			attackQueue.Enqueue(sequences[d].attElements[i]);
-
-	}
-
-	/// <summary>the player attacks in current direction
-	private void attack(int dPad){
-//		Debug.Log("Attacks with dPad " + direction + " attack" + " angle: " + attackAngle);
-		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/1.75f) * new Vector3(Mathf.Cos(attackAngle),0f,Mathf.Sin(attackAngle)),Quaternion.Euler(0,(-(attackAngle - PI/2)/PI)*180,0)) as Transform;
-		t.position += Vector3.up * ((name == "P2") ? 1f:2f);
-        Physics.IgnoreCollision(t.collider, collider);
-	}
 
 	/// <summary>Moves the player</summary>
 	private void movePlayer(){
 		//if attacking
-		rigidbody.AddForce((left + right * 0.3f) * Time.deltaTime * acc);
-		if(right.x > 0 && mirrored || (right.x < 0 && !mirrored)){
+		rigidbody.AddForce((left) * Time.deltaTime * acc);
+		if(left.x > 0 && mirrored || (left.x < 0 && !mirrored)){
 			model.localScale = new Vector3(-1 * model.localScale.x,1f,1f);
 			mirrored = !mirrored;
 		}
@@ -204,43 +132,6 @@ public class Player : MonoBehaviour {
 			anim.SetBool("moving",true);
 		else
 			anim.SetBool("moving",false);
-	}
-
-	/// <summary>Checks if any attack button is pressed(or multiple) and activates attack in that direction</summary>
-	private void checkAttackButtons(){
-		float dX = Input.GetAxis(name + " dPad X");
-		float dY = Input.GetAxis(name + " dPad Y");
-
-		//Debug.Log("x " + dX + ", " + "y " + dY);
-
-		if(dY == 1){
-			//up
-			int dir = 0;
-			if(dX == 1)
-				dir++;
-			else if(dX == -1)
-				dir += 7;
-			
-
-			startAttack(dir);
-
-		}else if(dY == -1){
-			//down
-
-			int dir = 4;
-			if(dX == 1)
-				dir--;
-			else if(dX == -1)
-				dir++;
-
-			startAttack(dir);
-		}else if(dX == 1){
-			//right
-			startAttack(2);
-		}else if(dX == -1){
-			//left
-			startAttack(6);
-		}
 	}
 
 	/// <summary>Gets the axis for the sticks and sets left and right stick and their angle</summary>
@@ -275,73 +166,12 @@ public class Player : MonoBehaviour {
 		//rotate
 	}
 
-	///<summary>checks each frame if a current attack sequence is completed</summary>
-	IEnumerator checkAttackElement(int direction) {
-		bool sequenceDone = false;
-		AttackElement att = attackQueue.Peek();
-		bool isLeft = att.left;
+	private void updateRightStick(){
+		if(right.magnitude != 0){
+			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle - attackAngle) * offset,0f,Mathf.Sin(rightAngle - attackAngle) * offset);
+			rightStick.rotation = Quaternion.LookRotation(right);
+		}else rightStick.localPosition = Vector3.zero;
 
-		float startAngle = att.startAngle;
-		float endAngle = att.endAngle;
-
-		float angle = 0;
-
-		float deltaAngle = endAngle - startAngle;
-		float step = PI/8;
-		float checkRange = step/2;
-		int num = Mathf.RoundToInt(deltaAngle/step);
-
-		float[] angles = new float[num];
-		for(int i = 0;i<num;i++){
-			float angleStep = step*i;
-			angles[i] = startAngle + angleStep;
-			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,0f,Mathf.Sin(startAngle + angleStep) * offset);
-			particles[i].color = (isLeft ? Color.blue:Color.red);
-			particles[i].size = .5f;
-		}
-
-		ps.SetParticles(particles,num);
-
-		int pointsHit = 0;
-
-		while(!sequenceDone) {
-			if(isLeft)
-				angle = leftAngle;
-			else
-				angle = rightAngle;
-
-			if(Input.GetButton(name + " O")) {
-				attacking = false;
-				sequenceDone = true;
-				attackQueue.Clear();
-
-				zeroParticleSize();
-			}
-			for(int i = 0;i<num;i++){
-				if(angles[i] != -1 && angle > angles[i] - checkRange && angle < angles[i] + checkRange){
-					pointsHit++;
-					angles[i] = -1;
-					particles[i].color = Color.green;
-					ps.SetParticles(particles,num);
-				}
-			}
-			if(pointsHit == num){
-				attackQueue.Dequeue();
-				//Debug.Log("seq left " + attackQueue.Count);
-				if(attackQueue.Count == 0){
-					attacking = false;
-					attack(direction);
-					anim.Play("Attack");
-
-					zeroParticleSize();
-				}else
-					StartCoroutine(checkAttackElement(direction));
-
-				sequenceDone = true;
-			}
-
-			yield return new WaitForEndOfFrame();
-		}
 	}
 
 	///<summary>sets the particles to zero</summary>
@@ -352,41 +182,133 @@ public class Player : MonoBehaviour {
 		ps.SetParticles(particles,particles.Length);
 	}
 
-}
+	//ATTACK
 
-//structs
-
-public struct AttackElement{
-	public bool left;
-	public float startAngle;
-	public float endAngle;
-
-	public AttackElement(bool isLeft){
-		left = isLeft;
-		float range = Random.Range(.5f,1f) * Mathf.PI;
-		startAngle = Random.Range(-Mathf.PI,Mathf.PI-range);
-		endAngle = startAngle + range;
+	private void startAttack(){
+		attacking = true;
+		anim.SetBool("moving",false);
+		StartCoroutine(waitForAttackDirection());
 	}
 
-	public AttackElement(bool isLeft, float start, float range){
-		left = isLeft;
-		range = Mathf.Clamp(range,0,2*Mathf.PI);
-		startAngle = Mathf.Clamp(start,-Mathf.PI,Mathf.PI - range);
-		endAngle = startAngle + range;
+	private void attack(){
+		//actual attack
+		attacking = false;
+		anim.Play("Attack");
+		zeroParticleSize();
+
+		Transform t = Instantiate(attackCone, transform.position + (attackCone.localScale.y/((name == "P1") ? 1.5f:1.75f)) * new Vector3(Mathf.Cos(attackAngle),0f,Mathf.Sin(attackAngle)),Quaternion.Euler(0,(-(attackAngle - PI/2)/PI)*180,0)) as Transform;
+		t.position += Vector3.up * ((name == "P2") ? 1f:2f);
+        Physics.IgnoreCollision(t.collider, collider);
 	}
-}
 
-public struct AttackSequence{
-	public AttackElement[] attElements;
-	public float damage;
-	public float maxCompleteTime;
-	public float timeMultiplier;
+	IEnumerator waitForAttackDirection(){
+		while(right.magnitude == 0){
+			if(Input.GetButton(name + " O")){
+				Debug.Log("up");
+				attacking = false;
+				yield break;
+			}
+			yield return new WaitForEndOfFrame();
+		}
+		if(attacking == false)yield break;
 
-	public AttackSequence(float dmg,float time,float mult, params AttackElement[] attacks){
-		damage = dmg;
-		maxCompleteTime = time;
-		timeMultiplier = mult;
+		attackDirection = right;
+		attackAngle = rightAngle;
 
-		attElements = attacks;
+		if(right.x > 0 && mirrored || (right.x < 0 && !mirrored)){
+			model.localScale = new Vector3(-1 * model.localScale.x,1f,1f);
+			mirrored = !mirrored;
+		}
+
+		StartCoroutine(updateAttack(120));
+	}
+
+	IEnumerator updateAttack(int angleAttackCone) { 
+
+		float deltaAngle = ((float)angleAttackCone/180)*PI;
+		float startAngle = -deltaAngle/2+PI/16;
+
+		float step = PI/8;
+		float checkRange = step/2;
+		int num = Mathf.RoundToInt(deltaAngle/step);
+
+		attackUI.rotation = Quaternion.Euler(0,(-attackAngle/PI)*180,0);
+
+		float[] angles = new float[num];
+
+		for(int i = 0;i<num;i++){
+			float angleStep = step*i;
+			float newAngle = startAngle + angleStep;
+			
+			if(newAngle < -PI)newAngle += 2*PI;
+			if(newAngle > PI)newAngle -= 2*PI;
+			angles[i] = newAngle;
+			Debug.Log(newAngle);
+			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,0f,Mathf.Sin(startAngle + angleStep) * offset);
+			particles[i].color = Color.red;
+			particles[i].size = .5f;
+		}
+
+		ps.SetParticles(particles,num);
+
+		int pointsHit = 0;
+
+		while(attacking){
+			updateRightStick();
+
+			float angle = rightAngle - attackAngle;
+
+			if(angle < -PI)angle += 2*PI;
+			if(angle > PI)angle -= 2*PI;
+
+			if(Input.GetButton(name + " O")) {
+				attacking = false;
+				zeroParticleSize();
+				yield break;
+			}
+			Debug.Log(angle);
+			for(int i = 0;i<num;i++){
+				if(angles[i] != -9 && angle > angles[i] - checkRange && angle < angles[i] + checkRange){
+					pointsHit++;
+					angles[i] = -9;
+					particles[i].color = Color.green;
+					ps.SetParticles(particles,num);
+				}
+			}
+
+			if(pointsHit == num){
+				attack();
+				yield break;
+			}
+
+			yield return new WaitForEndOfFrame();
+		}
+
+		zeroParticleSize();
+	}
+
+//public
+	/// <summary>player takes damage</summary>
+	/// <param name="amount">the amount of damage taken - 1 is full health</param>
+	public void takeDamage(float amount){
+		health -= amount;
+		if(health < 0f){
+			//Dead
+			alive = false;
+			collider.enabled = false;
+			transform.Rotate(90,0,0);
+			rigidbody.useGravity = false;
+			Debug.Log("dead");
+			anim.SetBool("dead",true);
+		}
+
+		//update health Circle
+		healthCircle.fillAmount = health;
+	}
+
+	public void heal(float amount){
+		health += amount;
+		if(health > 1f) health = 1f;
+		healthCircle.fillAmount = health;
 	}
 }
