@@ -58,7 +58,7 @@ public class AttackCone : MonoBehaviour {
 		if(tag == "Enemy"){ //enemy
 			col.gameObject.GetComponent<Enemy>().takeDamage(.5f);
 		}else if(tag == "Player"){ //player
-			col.gameObject.GetComponent<Player>().heal(.1f);
+			col.gameObject.GetComponent<Player>().heal(.35f);
 		}
 		//Debug.Log(col.gameObject.name);
 	}

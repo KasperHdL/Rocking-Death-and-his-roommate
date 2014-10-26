@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -30,8 +30,8 @@ public class Player : MonoBehaviour {
 		private float trailEnd = 0f;
 		private float trailLength = 0.5f;
 
-		public float dashForce = 40000f;
-		private float dashUse = .51f;
+		public float dashForce = 8000f;
+		private float dashUse = .35f;
 
 //sticks
 	public Transform leftStick;

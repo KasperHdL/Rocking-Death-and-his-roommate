@@ -7,6 +7,11 @@ public class Enemy : MonoBehaviour {
 	public Transform model;
 
 	public Animator anim;
+	private bool alive = true;
+	private Vector3 beforeStunPos;
+	private bool stunned = false;
+	private float endStun = 0;
+	private float stunLength = 1.7f;
 
 //player reference
 	private Transform p1;
@@ -17,17 +22,19 @@ public class Enemy : MonoBehaviour {
 
 //attr
 	public float monsterRange;
-	private int acc = 1000;
+	private int acc = 900;
 	float health = 1;
 
 //attack
-	float attDelay = 0.4f;
+	float attDelay = 1f;
 	float nextAttack = 0f;
-	float damage = 0.10f;
+	float damage = 0.21f;
 
 	void Start () {// ----------------------------------------------------------------------------------------------------------------------------START OF START
 		p1 = GameHandler.p1Transform;
 		p2 = GameHandler.p2Transform;
+
+		acc += Random.Range(0,200);
 
 		player1 = GameHandler.p1;
 		player2 = GameHandler.p2;
@@ -35,6 +42,16 @@ public class Enemy : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () { // --------------------------------------------------------------------------------------------------------------------------START OF UPDATE
+		if(stunned){
+			if(endStun < Time.time){
+				transform.position = beforeStunPos;
+				stunned = false;
+			}else{
+				transform.position = beforeStunPos + new Vector3(Random.Range(-.1f,.1f),Random.Range(-.1f,.1f),Random.Range(-.1f,.1f));
+				return;
+			}
+		}
+		if(!alive) return;
 		Vector3 vec = returnClosestPlayerPos (p1.transform.position, p2.transform.position);
 		if(!player1.alive && player2.alive)vec = p2.transform.position - transform.position;
 		else if(!player2.alive && player1.alive)vec = p1.transform.position - transform.position;
@@ -80,12 +97,25 @@ public class Enemy : MonoBehaviour {
 //public
 
 	public void takeDamage (float dmg){// calculates damage on the enemy, and destroys it if health is below 0.
-		health =- dmg;
-		
+		if(stunned) return;
+		health -= dmg;
+		rigidbody.velocity = Vector3.zero;
 		if (health <= 0) {
 			spawner.numEnemies--;
-			Destroy(gameObject);		
+			transform.Rotate(90,0,0);
+			//Dead
+			//anim.SetBool("attacking",false);
+			anim.speed = 0;
+			alive = false;
+			collider.enabled = false;
+			rigidbody.useGravity = false;
 		}
+
+		beforeStunPos = transform.position;
+		stunned = true;
+
+		endStun = Time.time + stunLength;
+		
 		
 	}
 

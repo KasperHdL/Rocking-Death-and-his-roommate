@@ -23,8 +23,8 @@ public class SpawnAlgorithm : MonoBehaviour {
 		timer = 1.0f;
 		numEnemies = 0;
 		diffMult = 1.1f;
-		checkNum = 2;
-		maxCount = 200;
+		checkNum = 10;
+		maxCount = 500;
 		/*Debug.Log (p1);
 		Transform g = Instantiate (enemyPrefab, Vector2.zero, Quaternion.identity) as Transform;
 		g.GetComponent<Enemy_AI> ().setPlayers (p1, p2);*/
@@ -47,7 +47,7 @@ public class SpawnAlgorithm : MonoBehaviour {
 
 
 	void difficultyScalerWaveSender(){ //Makes the wave count 20% larger, as well as spawns another wave
-		timer += 5.0f;
+		timer += 10.0f;
 		Spawner ();
 	}
 
