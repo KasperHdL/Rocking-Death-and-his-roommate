@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 public class GameHandler : MonoBehaviour {
@@ -13,6 +14,9 @@ public class GameHandler : MonoBehaviour {
 
 	public static Transform p1Transform;
 	public static Transform p2Transform;
+
+	public static int score = 0;
+	public Text scoreUI;
 
 	// Use this for initialization
 	void Start () {
@@ -55,6 +59,9 @@ public class GameHandler : MonoBehaviour {
 	void gameStarted(){
 		if(p1.health <= 0 && p2.health <= 0)
 			gameState = State.Over;
+
+		score += 1;
+		scoreUI.text = "" + score;
 	}
 
 	void gamePaused(){

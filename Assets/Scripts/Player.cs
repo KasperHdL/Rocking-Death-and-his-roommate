@@ -24,6 +24,7 @@ public class Player : MonoBehaviour {
 	private float energyTick = 0.01f;
 	public Image energyCircle;
 	public RectTransform energyRect;
+	public Vector2 energyUIoffset;
 
 	//dash
 		public TrailRenderer trail;
@@ -68,13 +69,8 @@ public class Player : MonoBehaviour {
 		trail.time = 0;
 		cam = Camera.main;
 
-		if(Settings.debug){
-			leftStick.renderer.enabled = true;
-			rightStick.renderer.enabled = true;
-		}else{
 			leftStick.renderer.enabled = false;
 			rightStick.renderer.enabled = false;
-		}
 	}
 	
 	// Update is called once per frame
@@ -104,13 +100,13 @@ public class Player : MonoBehaviour {
 			attacking = false;
 		}
 
-		debugStick();
+		updateRightStick();
 		if(energy != 1){
 			energyCircle.enabled = true;
 			energyCircle.fillAmount = energy;
 			Vector3 wPos = cam.WorldToScreenPoint(transform.position);
 			RectTransform r = energyRect;
-			r.position = new Vector2(wPos.x + 31f,wPos.y + 41f);
+			r.position = new Vector2(wPos.x,wPos.y) + energyUIoffset;
 			energyRect = r;
 		}else{
 			energyCircle.enabled = false;
@@ -149,7 +145,7 @@ public class Player : MonoBehaviour {
 	}
 
 	/// <summary>moves the children object named left and rightStick</summary>
-	private void debugStick(){
+	private void updateLeftStick(){
 		//set position of debug sticks
 		if(left.magnitude != 0){
 			leftStick.position = transform.position + new Vector3(Mathf.Cos(leftAngle) * offset,0f,Mathf.Sin(leftAngle) * offset);
@@ -157,18 +153,12 @@ public class Player : MonoBehaviour {
 
 		}else leftStick.localPosition = Vector3.zero;
 
-		if(right.magnitude != 0){
-			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle) * offset,0f,Mathf.Sin(rightAngle) * offset);
-			rightStick.rotation = Quaternion.LookRotation(right);
-
-		}else rightStick.localPosition = Vector3.zero;
-
 		//rotate
 	}
 
 	private void updateRightStick(){
 		if(right.magnitude != 0){
-			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle - attackAngle) * offset,0f,Mathf.Sin(rightAngle - attackAngle) * offset);
+			rightStick.position = transform.position + new Vector3(Mathf.Cos(rightAngle) * offset,0f,Mathf.Sin(rightAngle) * offset);
 			rightStick.rotation = Quaternion.LookRotation(right);
 		}else rightStick.localPosition = Vector3.zero;
 
@@ -193,6 +183,7 @@ public class Player : MonoBehaviour {
 	private void attack(){
 		//actual attack
 		attacking = false;
+		rightStick.renderer.enabled = false;
 		anim.Play("Attack");
 		zeroParticleSize();
 
@@ -201,16 +192,20 @@ public class Player : MonoBehaviour {
         Physics.IgnoreCollision(t.collider, collider);
 	}
 
+	private void cancelAttack(){
+		attacking = false;
+		zeroParticleSize();
+		rightStick.renderer.enabled = false;
+
+
+	}
+
 	IEnumerator waitForAttackDirection(){
 		while(right.magnitude == 0){
-			if(Input.GetButton(name + " O")){
-				Debug.Log("up");
-				attacking = false;
-				yield break;
-			}
 			yield return new WaitForEndOfFrame();
 		}
 		if(attacking == false)yield break;
+		rightStick.renderer.enabled = true;
 
 		attackDirection = right;
 		attackAngle = rightAngle;
@@ -243,7 +238,6 @@ public class Player : MonoBehaviour {
 			if(newAngle < -PI)newAngle += 2*PI;
 			if(newAngle > PI)newAngle -= 2*PI;
 			angles[i] = newAngle;
-			Debug.Log(newAngle);
 			particles[i].position = new Vector3(Mathf.Cos(startAngle + angleStep) * offset,0f,Mathf.Sin(startAngle + angleStep) * offset);
 			particles[i].color = Color.red;
 			particles[i].size = .5f;
@@ -261,12 +255,6 @@ public class Player : MonoBehaviour {
 			if(angle < -PI)angle += 2*PI;
 			if(angle > PI)angle -= 2*PI;
 
-			if(Input.GetButton(name + " O")) {
-				attacking = false;
-				zeroParticleSize();
-				yield break;
-			}
-			Debug.Log(angle);
 			for(int i = 0;i<num;i++){
 				if(angles[i] != -9 && angle > angles[i] - checkRange && angle < angles[i] + checkRange){
 					pointsHit++;
@@ -283,7 +271,6 @@ public class Player : MonoBehaviour {
 
 			yield return new WaitForEndOfFrame();
 		}
-
 		zeroParticleSize();
 	}
 
@@ -300,6 +287,7 @@ public class Player : MonoBehaviour {
 			rigidbody.useGravity = false;
 			Debug.Log("dead");
 			anim.SetBool("dead",true);
+			audio.Play();
 		}
 
 		//update health Circle

@@ -38,6 +38,7 @@ public class Enemy : MonoBehaviour {
 
 		player1 = GameHandler.p1;
 		player2 = GameHandler.p2;
+		attDelay = audio.clip.length;
 	}// ------------------------------------------------------------------------------------------------------------------------------------------END OF START
 	
 	// Update is called once per frame
@@ -90,6 +91,7 @@ public class Enemy : MonoBehaviour {
 	
 	private void attack(Transform player){//Takes a player and removes an amount from his health
 		anim.SetBool("attacking",true);
+		audio.Play();
 		player.GetComponent<Player> ().takeDamage (damage);
 	}
 
@@ -109,6 +111,8 @@ public class Enemy : MonoBehaviour {
 			alive = false;
 			collider.enabled = false;
 			rigidbody.useGravity = false;
+
+			GameHandler.score += 5000;
 		}
 
 		beforeStunPos = transform.position;
